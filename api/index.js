@@ -91,7 +91,7 @@ app.get("/resolve/user/input", (req, res) => {
 
     if (country && notAllowedArray.includes(country)) {
         // Country is blocked
-        resolvedKey = "not_allowed";
+        resolvedKey = "not_@llowed";
     } else if (country && validKeysArray.includes(country)) {
         // Country is in allowed list
         resolvedKey = country;
@@ -105,6 +105,107 @@ app.get("/resolve/user/input", (req, res) => {
         result: [
             {
                 message: resolvedKey,
+            },
+        ],
+    });
+});
+
+/**
+ * GET /resolve/number/whitelist
+ * Query params:
+ * - input: WhatsApp number to check (required)
+ * - allowednumbers: comma-separated list of allowed phone numbers (required)
+ * - defaultkey: what to return if number is not in whitelist (defaults to "not_allowed")
+ *
+ * Logic:
+ * - If input number matches any in allowednumbers → return "allowed"
+ * - Otherwise → return defaultkey
+ */
+app.get("/resolve/number/whitelist", (req, res) => {
+    let { input, allowednumbers, defaultkey } = req.query;
+
+    // Normalize defaultkey
+    defaultkey = defaultkey?.trim().toLowerCase() || "not_@llowed";
+
+    // Validate required input
+    if (!input || typeof input !== "string" || !input.trim()) {
+        return res.status(400).json({
+            code: "400",
+            result: [
+                {
+                    type: "text",
+                    message: "Missing required field: input",
+                },
+            ],
+        });
+    }
+
+    // Validate allowednumbers
+    if (!allowednumbers || typeof allowednumbers !== "string" || !allowednumbers.trim()) {
+        return res.status(400).json({
+            code: "400",
+            result: [
+                {
+                    type: "text",
+                    message: "Missing required field: allowednumbers",
+                },
+            ],
+        });
+    }
+
+    // Helper to normalize a phone number for comparison
+    const normalizeNumber = (num) => {
+        if (!num || typeof num !== "string") return null;
+        // Remove whatsapp:, spaces, dashes, parentheses
+        let normalized = num
+            .replaceAll(/[\s\-\\()]/g, "")
+            .trim();
+        if (!normalized) return null;
+        // Ensure it starts with +
+        if (!normalized.startsWith("+")) normalized = `+${normalized}`;
+        return normalized;
+    };
+
+    // Normalize input number
+    const inputNormalized = normalizeNumber(input);
+    if (!inputNormalized) {
+        return res.status(400).json({
+            code: "400",
+            result: [
+                {
+                    type: "text",
+                    message: "Invalid input: empty after normalization",
+                },
+            ],
+        });
+    }
+
+    // Parse allowed numbers into array and normalize each
+    const allowedArray = allowednumbers
+        .split(",")
+        .map((n) => normalizeNumber(n))
+        .filter((n) => n !== null);
+
+    if (allowedArray.length === 0) {
+        return res.status(400).json({
+            code: "400",
+            result: [
+                {
+                    type: "text",
+                    message: "No valid numbers in allowednumbers",
+                },
+            ],
+        });
+    }
+
+    // Check if input is in the whitelist
+    const isAllowed = allowedArray.includes(inputNormalized);
+
+    return res.status(200).json({
+        code: "200",
+        result: [
+            {
+                message: isAllowed ? "allowed" : defaultkey,
             },
         ],
     });
