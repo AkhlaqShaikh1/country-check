@@ -205,7 +205,7 @@ app.get("/resolve/number/whitelist", (req, res) => {
         code: "200",
         result: [
             {
-                message: isAllowed ? "allowed" : defaultkey,
+                message: isAllowed ? "@llowed" : defaultkey,
             },
         ],
     });
