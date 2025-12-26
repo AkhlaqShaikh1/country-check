@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  waba-country-check-service:
+    image: ghcr.io/intellexal-solutions/waba-country-check-service:latest
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+    ports:
+      - "31000:31000"
+    environment:
+      - PORT=${PORT}
+    volumes:
+      - /var/log/waba-country-check-service:/app/logs
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:31000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  backend-net:
+    driver: overlay

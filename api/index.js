@@ -13,7 +13,7 @@ app.use(express.json());
  * - defaultkey: fallback key when no match (defaults to "garbage")
  *
  * Logic:
- * 1. If country is in notallowedkeys → return "not_allowed"
+ * 1. If country is in notallowedkeys → return "not_@llowed"
  * 2. If country is in validkeys → return the country code
  * 3. Otherwise → return defaultkey
  */
